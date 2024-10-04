@@ -1,0 +1,78 @@
+1 step 
+
+# Import necessary libraries
+import numpy as np
+import cv2 as cv
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from google.colab import files
+
+# Upload the image
+uploaded = files.upload()
+
+# Extract the filename from the uploaded files
+image_path = list(uploaded.keys())[0]
+
+2 step 
+
+# Function to perform K-means clustering on image pixels and plot PCA
+def kmeans_on_image(image_path, cluster_n):
+    # Load the image
+    img = cv.imread(image_path)
+    if img is None:
+        raise ValueError("Image not found or unable to load.")
+
+    # Convert the image to RGB
+    img_rgb = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+
+    # Reshape the image to a 2D array of pixels
+    pixel_values = img_rgb.reshape((-1, 3))
+    pixel_values = np.float32(pixel_values)
+
+    # Perform K-means clustering
+    term_crit = (cv.TERM_CRITERIA_EPS, 30, 0.1)
+    _, labels, centers = cv.kmeans(pixel_values, cluster_n, None, term_crit, 10, cv.KMEANS_RANDOM_CENTERS)
+
+    # Convert centers to uint8
+    centers = np.uint8(centers)
+
+    # Map the labels to center colors
+    segmented_img = centers[labels.flatten()]
+
+    # Reshape segmented image to original dimensions
+    segmented_img = segmented_img.reshape(img_rgb.shape)
+
+    # Apply PCA for 2D visualization
+    pca = PCA(n_components=2)
+    pixel_values_pca = pca.fit_transform(pixel_values)
+
+    # Create a scatter plot for PCA
+    plt.figure(figsize=(18, 6))
+
+    # Plot the original and segmented images
+    plt.subplot(1, 3, 1)
+    plt.imshow(img_rgb)
+    plt.title('Original Image')
+    plt.axis('off')
+
+    plt.subplot(1, 3, 2)
+    plt.imshow(segmented_img)
+    plt.title('Segmented Image')
+    plt.axis('off')
+
+    # Plot PCA results
+    plt.subplot(1, 3, 3)
+    scatter = plt.scatter(pixel_values_pca[:, 0], pixel_values_pca[:, 1], c=labels.flatten(), cmap='tab10', s=1)
+    plt.colorbar(scatter, ticks=range(cluster_n), label='Cluster')
+    plt.title('PCA of Image Pixels')
+    plt.xlabel('Principal Component 1')
+    plt.ylabel('Principal Component 2')
+
+    plt.show()
+
+    print('Done')
+
+# Number of clusters
+cluster_n = 5
+kmeans_on_image(image_path, cluster_n)
+#google colab
